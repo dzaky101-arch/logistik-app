@@ -324,6 +324,7 @@ async function handleScanSubmit(e) {
     timestamp: timestamp,
     resi: resi,
     seller: seller,
+    noUrut: '-',
     status: 'pending' // pending, success, error
   };
   
@@ -361,7 +362,7 @@ async function handleScanSubmit(e) {
     if (result.status === 'success') {
       // Success feedback
       playSound('success');
-      updateHistoryItemStatus(scanId, 'success');
+      updateHistoryItemStatus(scanId, 'success', result.noUrut);
       container.classList.add('flash-success');
       
       // Update totals
@@ -385,10 +386,13 @@ async function handleScanSubmit(e) {
   }
 }
 
-function updateHistoryItemStatus(id, newStatus) {
+function updateHistoryItemStatus(id, newStatus, noUrut) {
   const item = scannerState.history.find(h => h.id === id);
   if (item) {
     item.status = newStatus;
+    if (noUrut !== undefined) {
+      item.noUrut = noUrut;
+    }
     renderHistoryTable();
   }
 }
@@ -398,7 +402,7 @@ function renderHistoryTable() {
   if (!tbody) return;
 
   if (scannerState.history.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Belum ada resi yang dipindai.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Belum ada resi yang dipindai.</td></tr>`;
     return;
   }
 
@@ -422,6 +426,7 @@ function renderHistoryTable() {
 
     tr.innerHTML = `
       <td>${item.timestamp}</td>
+      <td style="font-weight:bold; color:var(--primary);">${item.noUrut || '-'}</td>
       <td class="resi-cell" style="display:flex; align-items:center;">
         <span>${escapeHtml(item.resi)}</span>
         ${qrButton}
@@ -479,10 +484,13 @@ function doPost(e) {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheets()[0]; // Mengambil sheet/tab pertama
     
+    // Format tanggal Indonesia (Contoh: 30 Mei 2026)
+    var formattedDate = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd MMMM yyyy");
+    
     // Setup Header Kolom jika sheet masih kosong
     var headers = sheet.getRange(1, 1, 1, Math.max(1, sheet.getLastColumn())).getValues()[0];
     if (sheet.getLastColumn() == 0 || headers[0] == "") {
-      headers = ["Tanggal", "Nama Seller", "Trip", "Nomor Resi", "Keterangan", "Timestamp Input"];
+      headers = ["Tanggal", "No Urut", "Nama Seller", "Trip", "Nomor Resi", "Keterangan", "Timestamp Input"];
       sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     }
     
@@ -494,10 +502,10 @@ function doPost(e) {
         .setHeader("Access-Control-Allow-Origin", "*");
     }
     
-    // Validasi Resi Double (Cek di kolom Nomor Resi / Kolom 4)
+    // Validasi Resi Double (Cek di kolom Nomor Resi / Kolom 5)
     var lastRow = sheet.getLastRow();
     if (lastRow > 1) {
-      var resiValues = sheet.getRange(1, 4, lastRow, 1).getValues();
+      var resiValues = sheet.getRange(1, 5, lastRow, 1).getValues();
       for (var i = 0; i < resiValues.length; i++) {
         var existingResi = resiValues[i][0].toString().trim().toUpperCase();
         if (existingResi === resi) {
@@ -508,12 +516,26 @@ function doPost(e) {
       }
     }
     
-    // Format tanggal Indonesia (Contoh: 30 Mei 2026)
-    var formattedDate = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd MMMM yyyy");
+    // Hitung No Urut untuk Seller tersebut pada Hari Ini (Kolom Tanggal ada di kolom 1, Nama Seller ada di kolom 3)
+    var noUrut = 1;
+    if (lastRow > 1) {
+      var dataValues = sheet.getRange(1, 1, lastRow, 3).getValues();
+      var sellerCount = 0;
+      var targetSeller = (data.seller || "-").toString().trim().toLowerCase();
+      for (var i = 1; i < dataValues.length; i++) {
+        var rowDate = dataValues[i][0].toString();
+        var rowSeller = dataValues[i][2].toString().trim().toLowerCase();
+        if (rowDate === formattedDate && rowSeller === targetSeller) {
+          sellerCount++;
+        }
+      }
+      noUrut = sellerCount + 1;
+    }
     
     // Tambah baris data baru
     var newRow = [
       formattedDate,
+      noUrut,
       data.seller || "-",
       data.trip || "-",
       data.resi || "",
@@ -522,7 +544,7 @@ function doPost(e) {
     ];
     sheet.appendRow(newRow);
     
-    return ContentService.createTextOutput(JSON.stringify({status: "success", message: "Data resi " + data.resi + " berhasil disimpan"}))
+    return ContentService.createTextOutput(JSON.stringify({status: "success", message: "Data resi " + data.resi + " berhasil disimpan", noUrut: noUrut}))
       .setMimeType(ContentService.MimeType.JSON)
       .setHeader("Access-Control-Allow-Origin", "*");
       
@@ -759,6 +781,7 @@ async function handleCameraScanResult(resi) {
     timestamp: timestamp,
     resi: resi,
     seller: seller,
+    noUrut: '-',
     status: 'pending'
   });
   renderHistoryTable();
@@ -776,7 +799,7 @@ async function handleCameraScanResult(resi) {
     const result = await response.json();
     if (result.status === 'success') {
       playSound('success');
-      updateHistoryItemStatus(scanId, 'success');
+      updateHistoryItemStatus(scanId, 'success', result.noUrut);
       container.classList.add('flash-success');
       scannerState.totalScanned++;
       document.getElementById('counter-total').textContent = scannerState.totalScanned;
@@ -834,6 +857,7 @@ async function handleMultiSubmit() {
         timestamp: timestamp,
         resi: resi,
         seller: seller,
+        noUrut: '-',
         status: 'error'
       });
       renderHistoryTable();
@@ -851,6 +875,7 @@ async function handleMultiSubmit() {
         timestamp: timestamp,
         resi: resi,
         seller: seller,
+        noUrut: '-',
         status: 'error'
       });
       renderHistoryTable();
@@ -865,6 +890,7 @@ async function handleMultiSubmit() {
       timestamp: timestamp,
       resi: resi,
       seller: seller,
+      noUrut: '-',
       status: 'pending'
     });
     renderHistoryTable();
@@ -886,7 +912,7 @@ async function handleMultiSubmit() {
       if (result.status === 'success') {
         successCount++;
         playSound('success');
-        updateHistoryItemStatus(scanId, 'success');
+        updateHistoryItemStatus(scanId, 'success', result.noUrut);
         scannerState.totalScanned++;
         document.getElementById('counter-total').textContent = scannerState.totalScanned;
       } else {
