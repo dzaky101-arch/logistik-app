@@ -328,9 +328,6 @@ async function handleScanSubmit(e) {
   };
   
   scannerState.history.unshift(newHistoryItem);
-  if (scannerState.history.length > 5) {
-    scannerState.history.pop();
-  }
   renderHistoryTable();
 
   // INSTANT REFOCUS & CLEAR INPUT
@@ -764,7 +761,6 @@ async function handleCameraScanResult(resi) {
     seller: seller,
     status: 'pending'
   });
-  if (scannerState.history.length > 5) scannerState.history.pop();
   renderHistoryTable();
 
   try {
@@ -840,7 +836,6 @@ async function handleMultiSubmit() {
         seller: seller,
         status: 'error'
       });
-      if (scannerState.history.length > 5) scannerState.history.pop();
       renderHistoryTable();
       playSound('error');
       continue;
@@ -858,7 +853,6 @@ async function handleMultiSubmit() {
         seller: seller,
         status: 'error'
       });
-      if (scannerState.history.length > 5) scannerState.history.pop();
       renderHistoryTable();
       playSound('error');
       continue;
@@ -873,7 +867,6 @@ async function handleMultiSubmit() {
       seller: seller,
       status: 'pending'
     });
-    if (scannerState.history.length > 5) scannerState.history.pop();
     renderHistoryTable();
 
     try {

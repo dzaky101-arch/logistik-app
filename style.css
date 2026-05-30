@@ -367,7 +367,8 @@ select:focus {
   margin-top: 1.5rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 table {
