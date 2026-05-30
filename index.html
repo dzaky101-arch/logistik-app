@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SheetLog - Terminal Barcode Scanner Pickup</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Load HTML5-QRCode library for mobile camera scanning -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo-container">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M19.5 9.5H4.5C3.4 9.5 2.5 10.4 2.5 11.5V17.5C2.5 18.6 3.4 19.5 4.5 19.5H19.5C20.6 19.5 21.5 18.6 21.5 17.5V11.5C21.5 10.4 20.6 9.5 19.5 9.5M19.5 17.5H4.5V13.5H19.5V17.5M4.5 4.5H19.5C20.6 4.5 21.5 5.4 21.5 6.5V7.5H2.5V6.5C2.5 5.4 3.4 4.5 4.5 4.5Z"/>
+        </svg>
+      </div>
+      <div>
+        <h1>SheetLog Pickup Scanner 📦</h1>
+        <p class="app-subtitle">Terminal Pemindaian Resi Cepat Terintegrasi Google Sheets</p>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span id="connection-status" class="status-badge badge-connected">● Scanner Siap</span>
+    </div>
+  </header>
+
+  <main class="app-container">
+    
+    <!-- LEFT PANEL: SETTINGS & MEMORY LIST -->
+    <section class="glass-card" style="display: flex; flex-direction: column; gap: 1.75rem;">
+      
+      <div>
+        <h2 class="card-title">
+          <svg style="width: 24px; height: 24px; fill: var(--primary);" viewBox="0 0 24 24">
+            <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.35 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.47,5.34 14.86,5.08L14.48,2.42C14.44,2.18 14.24,2 14,2H10C9.76,2 9.56,2.18 9.52,2.42L9.14,5.08C8.53,5.34 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11.03C4.53,11.35 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.95C7.96,18.34 8.53,18.66 9.14,18.92L9.52,21.58C9.56,21.82 9.76,22 10,22H14C14.24,22 14.44,21.82 14.48,21.58L14.86,18.92C15.47,18.66 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+          </svg>
+          Pengaturan API Google
+        </h2>
+        
+        <div class="config-group">
+          <div class="form-group">
+            <label for="gas-url">Google Web App URL (Deployment URL)</label>
+            <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          
+          <div class="form-group">
+            <label for="sheet-url">Google Sheet URL / ID</label>
+            <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/.../edit">
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+        <h2 class="card-title" style="border: none; padding: 0; margin-bottom: 1rem;">
+          <svg style="width: 24px; height: 24px; fill: var(--primary);" viewBox="0 0 24 24">
+            <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+          </svg>
+          Kelola Daftar Seller
+        </h2>
+        <p class="app-subtitle" style="margin-bottom: 1rem;">Tambahkan nama seller baru ke memori agar muncul pada dropdown pilihan.</p>
+        
+        <div class="form-group">
+          <label for="input-new-seller">Nama Seller Baru</label>
+          <div class="input-btn-group">
+            <input type="text" id="input-new-seller" placeholder="Masukkan nama seller...">
+            <button class="btn btn-primary" id="btn-add-seller">Tambah</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+        <div class="sound-toggle-group">
+          <input type="checkbox" id="chk-sound" checked style="width:18px; height:18px; cursor:pointer;">
+          <label for="chk-sound" style="margin-bottom: 0; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:6px;">
+            🔊 Putar Efek Suara (Beep)
+          </label>
+        </div>
+        <p class="app-subtitle">Browser akan bersuara *Beep* saat sukses menyimpan dan *Boop* saat gagal.</p>
+      </div>
+
+    </section>
+
+    <!-- RIGHT PANEL: SCAN AREA & HISTORY -->
+    <section class="glass-card" style="display: flex; flex-direction: column;">
+      
+      <div class="tabs-header">
+        <button class="tab-btn active" data-tab="tab-scanner">
+          <svg style="width: 18px; height: 18px; fill: currentColor;" viewBox="0 0 24 24">
+            <path d="M4,6H20V18H4M20,4H4C2.9,4 2,4.9 2,6V18C2,19.1 2.9,20 4,20H20C21.1,20 22,19.1 22,18V6C22,4.9 21.1,4 20,4Z"/>
+          </svg>
+          Terminal Scanner
+        </button>
+        <button class="tab-btn" data-tab="tab-setup">
+          <svg style="width: 18px; height: 18px; fill: currentColor;" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.5 22 12 17.5 2 12 2M13 19H11V17H13V19M15.07 11.25L14.17 12.17C13.45 12.9 13 13.5 13 15H11V14.5C11 13.4 11.45 12.4 12.17 11.67L13.41 10.41C13.78 10.05 14 9.55 14 9C14 7.9 13.1 7 12 7S10 7.9 10 9H8C8 6.79 9.79 5 12 5S16 6.79 16 9C16 9.88 15.64 10.68 15.07 11.25Z"/>
+          </svg>
+          Panduan Setup Google
+        </button>
+      </div>
+
+      <!-- TAB 1: SCANNER -->
+      <div id="tab-scanner" class="tab-content active" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+        
+        <!-- Metadata Selection Grid -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:1.5rem;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="select-seller">1. Nama Seller</label>
+            <select id="select-seller">
+              <!-- Dinamis dari JS -->
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="select-trip">2. Trip</label>
+            <select id="select-trip">
+              <option value="Trip 1">Trip 1</option>
+              <option value="Trip 2">Trip 2</option>
+              <option value="Trip 3">Trip 3</option>
+              <option value="Trip 4">Trip 4</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label for="select-keterangan">3. Keterangan</label>
+            <select id="select-keterangan">
+              <option value="Paket sudah di-pickup">Paket sudah di-pickup</option>
+              <option value="Paket rusak/cacat">Paket rusak/cacat</option>
+              <option value="Paket retur">Paket retur</option>
+              <option value="Paket salah rute">Paket salah rute</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Input Mode Selector -->
+        <div class="input-mode-toggle" style="display:flex; justify-content:center; gap:10px; margin-bottom:1.25rem;">
+          <button type="button" class="btn btn-secondary active" id="btn-mode-single" style="flex:1;">
+            <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24"><path d="M4 4H10V6H6V10H4V4M20 4V10H18V6H14V4H20M4 20V14H6V18H10V20H4M20 20H14V18H18V14H20V20M2 11H22V13H2V11Z"/></svg>
+            Pindai Satuan
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-mode-multi" style="flex:1;">
+            <svg style="width:18px;height:18px;fill:currentColor;" viewBox="0 0 24 24"><path d="M14,17H4V15H14V17M17,13H4V11H17V13M20,9H4V7H20V9M20,15V18H23V20H20V23H18V20H15V18H18V15H20Z"/></svg>
+            Input Banyak
+          </button>
+        </div>
+
+        <!-- Camera Scanner Viewport -->
+        <div id="camera-scanner-container" style="display:none; flex-direction:column; gap:10px; margin-bottom:1.5rem; background:rgba(0,0,0,0.4); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1.25rem; text-align:center;">
+          <div style="font-size:0.85rem; font-weight:600; color:var(--primary); margin-bottom:0.5rem; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <div class="spinner" style="width:12px; height:12px; border-width:1.5px; margin:0;"></div>
+            KAMERA AKTIF - Posisikan Barcode SPX di Tengah Kotak
+          </div>
+          <div id="camera-reader" style="width:100%; max-width:450px; margin:0 auto; overflow:hidden; border-radius:8px;"></div>
+          <div style="display:flex; justify-content:center; gap:8px; margin-top:8px;">
+            <button class="btn btn-secondary" id="btn-switch-camera" type="button" style="padding: 0.5rem 1rem; font-size:0.8rem; height: auto;">Ganti Kamera</button>
+            <button class="btn btn-danger" id="btn-close-camera" type="button" style="padding: 0.5rem 1rem; font-size:0.8rem; height: auto;">Matikan Kamera</button>
+          </div>
+        </div>
+
+        <!-- Big Scan Box Input -->
+        <form id="scan-form">
+          <div id="scan-box" class="scan-area-container">
+            <svg style="width:48px; height:48px; fill:var(--primary); margin-bottom:0.5rem;" viewBox="0 0 24 24">
+              <path d="M4 4H10V6H6V10H4V4M20 4V10H18V6H14V4H20M4 20V14H6V18H10V20H4M20 20H14V18H18V14H20V20M2 11H22V13H2V11Z"/>
+            </svg>
+            <span style="font-size:0.95rem; font-weight:600; color:var(--text-muted);">ARAHKAN SCANNER GUN / KETIK DI SINI</span>
+            <input type="text" id="input-scan" class="input-scan-huge" autocomplete="off" placeholder="Pindai Resi..." required>
+            
+            <button type="button" class="btn btn-primary" id="btn-toggle-camera" style="margin-top:1rem; padding: 0.6rem 1.25rem; font-size: 0.85rem; width: auto; height: auto;">
+              <svg style="width:18px;height:18px;fill:var(--text-dark);" viewBox="0 0 24 24"><path d="M4,4H7L9,2H15L17,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M12,7A5,5 0 0,0 7,12A5,5 0 0,0 12,17A5,5 0 0,0 17,12A5,5 0 0,0 12,7M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9Z"/></svg>
+              Scan Pakai Kamera HP
+            </button>
+          </div>
+        </form>
+
+        <!-- Multi-Input Form Block -->
+        <div id="multi-input-container" style="display:none; flex-direction:column; gap:12px; margin-bottom:1.5rem; background:rgba(0,0,0,0.25); border:2px dashed var(--border-color); border-radius:var(--radius-lg); padding:1.5rem;">
+          <div class="form-group" style="margin-bottom:0.5rem;">
+            <label for="textarea-multi-scan" style="font-weight:600; color:var(--primary); font-size: 1rem;">Masukkan Banyak Resi Sekaligus</label>
+            <p class="app-subtitle" style="margin-bottom:0.75rem;">Satu resi per baris, atau dipisah spasi / koma. Contoh: SPXID123, SPXID456</p>
+            <textarea id="textarea-multi-scan" placeholder="Tempel / ketik banyak resi di sini...&#10;SPXID063846639495&#10;SPXID062327764495" rows="6" style="width:100%; font-family:monospace; padding:12px; border-radius:8px; border:1px solid var(--border-color); background:rgba(0,0,0,0.5); color:var(--primary); font-size:1.1rem; line-height:1.4; resize:vertical; outline:none; transition:var(--transition);"></textarea>
+          </div>
+          <button class="btn btn-primary" id="btn-submit-multi" type="button" style="width:100%; padding:12px; font-weight:bold; font-size:1rem; height: auto;">
+            <svg style="width:18px;height:18px;fill:var(--text-dark);" viewBox="0 0 24 24"><path d="M15,9H5V5H15M12,19A3,3 0 0,1 9,16A3,3 0 0,1 12,13A3,3 0 0,1 15,16A3,3 0 0,1 12,19M17,3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V7L17,3Z"/></svg>
+            Simpan Semua Resi Sekaligus
+          </button>
+        </div>
+
+        <div id="status-msg-box" style="display: none;">
+          <!-- Status feedback alert -->
+        </div>
+
+        <!-- Session Stats Counters -->
+        <div class="counter-container">
+          <div class="counter-card">
+            <div id="counter-total" class="counter-value">0</div>
+            <div class="counter-label">Total Terpindai (Sesi Ini)</div>
+          </div>
+        </div>
+
+        <!-- History Table -->
+        <div style="margin-top: 1.5rem;">
+          <h3 style="font-size:1rem; font-weight:600; margin-bottom:0.5rem;">Riwayat Pemindaian Sesi Ini:</h3>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Waktu</th>
+                  <th>Nomor Resi</th>
+                  <th>Seller</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr>
+                  <td colspan="4" style="text-align:center;color:var(--text-muted);">Belum ada resi yang dipindai.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 2: SETUP GUIDE -->
+      <div id="tab-setup" class="tab-content" style="flex: 1;">
+        <div style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1.25rem; font-weight: 600;">Panduan Pemasangan Google Apps Script</h3>
+          <p class="app-subtitle">Ikuti panduan berikut agar database Google Sheets Anda terhubung dengan Scanner ini.</p>
+        </div>
+
+        <div class="guide-steps">
+          
+          <div class="step-card">
+            <span class="step-title">
+              <span class="step-number">1</span> Buat Google Spreadsheet Baru
+            </span>
+            <div class="step-content">
+              <ul>
+                <li>Buka Google Drive dan buat spreadsheet baru.</li>
+                <li>Salin (copy) seluruh link spreadsheet tersebut dari address bar browser.</li>
+                <li>Tempelkan (paste) link tersebut ke dalam input **Google Sheet URL / ID** di panel pengaturan kiri.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-title">
+              <span class="step-number">2</span> Buka Apps Script & Salin Kode
+            </span>
+            <div class="step-content">
+              <ul>
+                <li>Di spreadsheet Anda, klik menu **Extensions (Ekstensi)** > **Apps Script**.</li>
+                <li>Buka tab **2. Salin Kode Google Apps Script** di atas, lalu klik tombol **Salin Kode** (ID Spreadsheet Anda sudah otomatis dimasukkan ke kode).</li>
+                <li>Hapus semua baris kode bawaan di editor Apps Script Anda, lalu tempelkan (paste) kode tersebut.</li>
+                <li>Klik tombol **Save** (ikon disket).</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-title">
+              <span class="step-number">3</span> Deploy sebagai Aplikasi Web (Web App)
+            </span>
+            <div class="step-content">
+              <ul>
+                <li>Klik tombol **Deploy (Terapkan)** di kanan atas Apps Script > **New deployment (Penerapan baru)**.</li>
+                <li>Pilih jenis **Web app (Aplikasi web)**.</li>
+                <li>Atur konfigurasi:
+                  <ul>
+                    <li><b>Execute as:</b> Me (Email Anda)</li>
+                    <li><b>Who has access:</b> Anyone (Siapa saja) ⚠️ *Wajib agar Scanner dapat menulis data.*</li>
+                  </ul>
+                </li>
+                <li>Klik **Deploy**. Otorisasi akun Google Anda (klik *Advanced/Lanjutan* > *Go to project (unsafe)* > *Allow*).</li>
+                <li>Salin **Web app URL** yang muncul (yang berakhiran `/exec`).</li>
+                <li>Tempelkan ke kolom **Google Web App URL (Deployment URL)** di panel kiri.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-title">
+              <span class="step-number">4</span> Uji Coba Otorisasi & Mulai Scan
+            </span>
+            <div class="step-content">
+              <ul>
+                <li>Di dalam editor Apps Script Anda, pilih fungsi **`doGet`** di dropdown menu atas, lalu klik **Run (Jalankan)** untuk menyetujui izin Google Sheets di akun Anda.</li>
+                <li>Kembali ke Scanner, pastikan cursor berkedip di kolom input pindaian besar.</li>
+                <li>Ketik nomor resi tes atau tembak barcode, lalu tekan enter. Data akan langsung terkirim secara otomatis!</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Apps Script Code Display Tab Content -->
+        <div class="code-block-container" style="margin-top: 1.5rem;">
+          <div class="code-header">
+            <span>Google Apps Script Code (Scanner)</span>
+            <button class="btn-copy" id="btn-copy-gas">
+              <svg style="width:16px;height:16px;fill:var(--text-dark)" viewBox="0 0 24 24">
+                <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+              </svg>
+              Salin Kode
+            </button>
+          </div>
+          <pre><code id="gas-code-display">Menggenerasi kode...</code></pre>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer>
+    <p>SheetLog Pickup Scanner &copy; 2026. Solusi Cepat Input Logistik & Operasional Gudang.</p>
+  </footer>
+
+  <!-- QR Code Modal Popup -->
+  <div id="qr-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content glass-card">
+      <button class="modal-close" id="btn-close-qr-modal">&times;</button>
+      <h3 style="font-size:1.25rem; font-weight:700; margin-bottom:0.5rem; text-align:center; color:var(--primary);">QR Code Resi</h3>
+      <p id="qr-modal-resi" style="font-family:monospace; font-size:1.2rem; font-weight:700; text-align:center; margin-bottom:1.5rem; color:var(--text-main); letter-spacing:1px;"></p>
+      <div style="display:flex; justify-content:center; align-items:center; background:#fff; padding:1.25rem; border-radius:12px; margin:0 auto 1.5rem auto; width: fit-content; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <img id="qr-modal-img" src="" alt="QR Code" style="width:200px; height:200px; display:block;">
+      </div>
+      <button class="btn btn-primary" id="btn-close-qr-modal-btn" style="width:100%; height: auto; padding: 10px 0;">Tutup</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
