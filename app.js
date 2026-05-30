@@ -93,12 +93,13 @@ function initApp() {
   // Copy GAS Code button
   document.getElementById('btn-copy-gas').addEventListener('click', copyGasCode);
 
-  // Bind QR Modal Close handlers
+  // Bind QR Modal Close & Carousel handlers
   const qrModal = document.getElementById('qr-modal');
   const closeBtn1 = document.getElementById('btn-close-qr-modal');
   const closeBtn2 = document.getElementById('btn-close-qr-modal-btn');
   
   const closeQR = () => {
+    stopQrAutoPlay();
     qrModal.style.display = 'none';
   };
   
@@ -108,6 +109,35 @@ function initApp() {
   qrModal.addEventListener('click', (e) => {
     if (e.target === qrModal) {
       closeQR();
+    }
+  });
+
+  document.getElementById('btn-qr-prev').addEventListener('click', () => {
+    stopQrAutoPlay();
+    qrSlider.currentIndex--;
+    updateQrModalView();
+  });
+
+  document.getElementById('btn-qr-next').addEventListener('click', () => {
+    stopQrAutoPlay();
+    qrSlider.currentIndex++;
+    updateQrModalView();
+  });
+
+  const btnQrPlay = document.getElementById('btn-qr-play');
+  btnQrPlay.addEventListener('click', () => {
+    if (qrSlider.isPlaying) {
+      stopQrAutoPlay();
+    } else {
+      startQrAutoPlay();
+    }
+  });
+
+  document.getElementById('select-qr-speed').addEventListener('change', (e) => {
+    qrSlider.speed = parseInt(e.target.value);
+    if (qrSlider.isPlaying) {
+      stopQrAutoPlay();
+      startQrAutoPlay();
     }
   });
 
@@ -890,16 +920,80 @@ async function handleMultiSubmit() {
   }
 }
 
-// Global function to show QR Modal
+// ========================================================
+// QR CODE SLIDER STATE & LOGIC
+// ========================================================
+let qrSlider = {
+  intervalId: null,
+  currentIndex: 0,
+  speed: 3000,
+  isPlaying: false
+};
+
 window.showQrModal = function(resi) {
   const modal = document.getElementById('qr-modal');
-  const resiText = document.getElementById('qr-modal-resi');
-  const qrImg = document.getElementById('qr-modal-img');
+  stopQrAutoPlay();
   
-  resiText.textContent = resi;
-  // Load QR image from public API
-  qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(resi)}`;
+  // Ambil data riwayat yang berhasil atau gagal (kecuali pending)
+  const history = scannerState.history.filter(h => h.status !== 'pending');
+  const index = history.findIndex(h => h.resi === resi);
+  qrSlider.currentIndex = index !== -1 ? index : 0;
   
+  updateQrModalView();
   modal.style.display = 'flex';
 };
+
+function updateQrModalView() {
+  const history = scannerState.history.filter(h => h.status !== 'pending');
+  if (history.length === 0) {
+    document.getElementById('qr-modal-resi').textContent = "Tidak ada resi";
+    document.getElementById('qr-modal-img').src = "";
+    document.getElementById('qr-modal-counter').textContent = "Resi 0 dari 0";
+    return;
+  }
+  
+  // Pastikan indeks dalam batas riwayat
+  if (qrSlider.currentIndex >= history.length) {
+    qrSlider.currentIndex = 0;
+  }
+  if (qrSlider.currentIndex < 0) {
+    qrSlider.currentIndex = history.length - 1;
+  }
+  
+  const item = history[qrSlider.currentIndex];
+  document.getElementById('qr-modal-resi').textContent = item.resi;
+  document.getElementById('qr-modal-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(item.resi)}`;
+  document.getElementById('qr-modal-counter').textContent = `Resi ${qrSlider.currentIndex + 1} dari ${history.length}`;
+}
+
+function startQrAutoPlay() {
+  qrSlider.isPlaying = true;
+  const btnPlay = document.getElementById('btn-qr-play');
+  btnPlay.innerHTML = `
+    <svg style="width:14px; height:14px; fill:#fff;" viewBox="0 0 24 24"><path d="M14,19H18V5H14M6,19H10V5H6V19Z"/></svg>
+    Pause Auto
+  `;
+  btnPlay.style.background = 'var(--danger)';
+  btnPlay.style.color = '#fff';
+
+  qrSlider.intervalId = setInterval(() => {
+    qrSlider.currentIndex++;
+    updateQrModalView();
+  }, qrSlider.speed);
+}
+
+function stopQrAutoPlay() {
+  qrSlider.isPlaying = false;
+  if (qrSlider.intervalId) {
+    clearInterval(qrSlider.intervalId);
+    qrSlider.intervalId = null;
+  }
+  const btnPlay = document.getElementById('btn-qr-play');
+  btnPlay.innerHTML = `
+    <svg style="width:14px; height:14px; fill:var(--text-dark);" viewBox="0 0 24 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z"/></svg>
+    Auto Play
+  `;
+  btnPlay.style.background = '';
+  btnPlay.style.color = '';
+}
 
