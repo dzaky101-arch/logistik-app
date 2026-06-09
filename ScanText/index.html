@@ -115,23 +115,49 @@
             </div>
           </div>
           
+          <div class="result-tabs">
+            <button class="tab-btn active" data-tab="tab-raw">Teks Mentah</button>
+            <button class="tab-btn" data-tab="tab-table">Pratinjau Tabel</button>
+          </div>
+          
           <div class="result-details">
-            <div class="detail-row">
-              <span class="detail-label">Hasil Ekstraksi Teks</span>
-              <div class="extracted-text-box">
-                <textarea id="res-extracted-text" readonly></textarea>
+            <div id="tab-raw" class="tab-content active">
+              <div class="detail-row">
+                <span class="detail-label">Hasil Ekstraksi Teks</span>
+                <div class="extracted-text-box">
+                  <textarea id="res-extracted-text" readonly></textarea>
+                </div>
+              </div>
+            </div>
+            
+            <div id="tab-table" class="tab-content">
+              <div class="detail-row">
+                <span class="detail-label">Pratinjau Grid Tabel</span>
+                <div class="table-preview-wrapper">
+                  <div class="table-scroll-container">
+                    <table class="preview-grid-table" id="preview-grid-table">
+                      <!-- Dynamic rows will be inserted here -->
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <div class="result-actions">
-            <button id="btn-copy-text" class="btn btn-primary">
+            <button id="btn-copy-text" class="btn btn-outline">
               <svg viewBox="0 0 24 24" class="btn-icon">
                 <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
               </svg>
               <span>Salin Teks</span>
             </button>
-            <button id="btn-reset" class="btn btn-outline">Scan Gambar Lain</button>
+            <button id="btn-download-excel" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" class="btn-icon">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,20H18A2,2 0 0,0 20,18V8L14,2M16,11H13V8H11V11H8V13H11V16H13V13H16V11Z"/>
+              </svg>
+              <span>Unduh Excel</span>
+            </button>
+            <button id="btn-reset" class="btn btn-outline">Scan Lain</button>
           </div>
         </section>
 

@@ -16,6 +16,7 @@ const laserScanner = document.getElementById('laser-scanner');
 const btnProcess = document.getElementById('btn-process');
 const btnReset = document.getElementById('btn-reset');
 const btnCopyText = document.getElementById('btn-copy-text');
+const btnDownloadExcel = document.getElementById('btn-download-excel');
 
 const progressCard = document.getElementById('progress-card');
 const progressStatus = document.getElementById('progress-status');
@@ -28,6 +29,10 @@ const resultStatusTitle = document.getElementById('result-status-title');
 const resExtractedText = document.getElementById('res-extracted-text');
 
 const historyTbody = document.getElementById('history-tbody');
+
+// Tabs elements
+const tabBtns = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -72,6 +77,23 @@ function initEventListeners() {
 
   // Copy Text Button
   btnCopyText.addEventListener('click', copyExtractedText);
+
+  // Download Excel Button
+  btnDownloadExcel.addEventListener('click', downloadExcel);
+
+  // Tab Switcher Click Events
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      
+      btn.classList.add('active');
+      const targetContent = document.getElementById(btn.dataset.tab);
+      if (targetContent) {
+        targetContent.classList.add('active');
+      }
+    });
+  });
 }
 
 // Handle selected file
@@ -239,17 +261,25 @@ function updateProgress(message, percent) {
 function showSuccessResult(rawText) {
   resultCard.classList.remove('hidden');
   
+  // Switch to Raw Text tab on success
+  switchTab('tab-raw');
+
   // Status Header
   resultStatusIndicator.className = 'status-indicator success';
   resultStatusTitle.textContent = 'Teks Berhasil Diekstrak!';
   
-  // Values
-  resExtractedText.value = rawText.trim() ? rawText.trim() : "(Gambar tidak berisi teks yang terbaca)";
+  // Set value in text box
+  const cleanedText = rawText.trim();
+  resExtractedText.value = cleanedText ? cleanedText : "(Gambar tidak berisi teks yang terbaca)";
+  
+  // Render table grid preview
+  renderTablePreview(cleanedText);
 }
 
 // Display error UI
 function showErrorResult(errorMessage) {
   resultCard.classList.remove('hidden');
+  switchTab('tab-raw');
   
   // Status Header
   resultStatusIndicator.className = 'status-indicator error';
@@ -257,6 +287,106 @@ function showErrorResult(errorMessage) {
   
   // Values
   resExtractedText.value = `Gagal memproses gambar.\nError: ${errorMessage}`;
+  document.getElementById('preview-grid-table').innerHTML = '';
+}
+
+// Helper to switch tabs programmatically
+function switchTab(tabId) {
+  tabBtns.forEach(b => b.classList.remove('active'));
+  tabContents.forEach(c => c.classList.remove('active'));
+  
+  const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+  
+  const activeContent = document.getElementById(tabId);
+  if (activeContent) activeContent.classList.add('active');
+}
+
+// Parse text lines into columns for grid representation
+// Splits by table separators | or tabs or 2+ spaces
+function parseTextToGrid(text) {
+  if (!text || text === "(Gambar tidak berisi teks yang terbaca)") return [];
+
+  const lines = text.split('\n');
+  const grid = [];
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    // Split columns by vertical dividers (with optional space), tabs, or multiple spaces
+    let columns = trimmed.split(/\s*\|\s*|\t| {2,}/);
+
+    // Clean columns and remove trailing/leading spaces
+    columns = columns.map(col => col.trim()).filter(col => col !== "");
+
+    if (columns.length > 0) {
+      grid.push(columns);
+    }
+  });
+
+  return grid;
+}
+
+// Render dynamic table preview in html
+function renderTablePreview(text) {
+  const grid = parseTextToGrid(text);
+  const table = document.getElementById('preview-grid-table');
+  table.innerHTML = '';
+
+  if (grid.length === 0) {
+    table.innerHTML = `<tr><td style="text-align: center; color: var(--text-muted); padding: 20px;">Tidak ada data terstruktur untuk pratinjau tabel.</td></tr>`;
+    return;
+  }
+
+  grid.forEach(row => {
+    const tr = document.createElement('tr');
+    row.forEach(col => {
+      const td = document.createElement('td');
+      td.textContent = col;
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+}
+
+// Convert extracted text table into CSV and download as Excel file
+function downloadExcel() {
+  const rawText = resExtractedText.value;
+  if (!rawText || rawText.startsWith("Gagal memproses gambar") || rawText === "(Gambar tidak berisi teks yang terbaca)") return;
+
+  const grid = parseTextToGrid(rawText);
+  if (grid.length === 0) {
+    alert("Tidak ada data terstruktur yang dapat diekspor ke Excel.");
+    return;
+  }
+
+  // Prepend sep=; so Excel automatically splits columns by semicolon without import wizard
+  let csvContent = "sep=;\r\n";
+
+  grid.forEach(row => {
+    const rowStr = row.map(col => {
+      // Escape double quotes inside cell values
+      const escaped = col.replace(/"/g, '""');
+      return `"${escaped}"`;
+    }).join(';');
+    csvContent += rowStr + "\r\n";
+  });
+
+  // Create UTF-8 BOM, blob, and trigger download
+  const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]); // Ensures Excel opens UTF-8 characters correctly
+  const blob = new Blob([BOM, csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+  const link = document.createElement("a");
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const timeStr = new Date().toTimeString().slice(0, 8).replace(/:/g, "");
+  
+  link.setAttribute("href", URL.createObjectURL(blob));
+  link.setAttribute("download", `ScanTeks_Excel_${dateStr}_${timeStr}.csv`);
+  document.body.appendChild(link);
+  
+  link.click();
+  document.body.removeChild(link);
 }
 
 // Copy Extracted Text to Clipboard
