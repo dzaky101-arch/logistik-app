@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan Text Gambar - OCR Extractor</title>
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Tesseract.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <div class="glow-bg"></div>
+  
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" class="logo-icon">
+          <path d="M4,4H10V10H4V4M20,4H14V10H20V4M14,14H20V20H14V14M4,14H10V20H4V14M6,6V8H8V6H6M16,6V8H18V6H16M16,16V18H18V16H16M6,16V18H8V16H6M7.5,7.5H6.5V6.5H7.5V7.5M17.5,7.5H16.5V6.5H17.5V7.5M17.5,17.5H16.5V16.5H17.5V17.5M6.5,17.5H7.5V16.5H6.5V17.5Z"/>
+        </svg>
+        <h1>ScanText<span>Gambar</span></h1>
+      </div>
+      <p class="tagline">Ekstrak teks dari gambar secara instan langsung di browser Anda</p>
+    </header>
+
+    <main class="app-grid">
+      <!-- Left Column: Workspace & Upload Control -->
+      <section class="card upload-card">
+        <div class="card-header">
+          <h2>Unggah Gambar</h2>
+          <p class="card-subtitle">Pilih file gambar atau seret langsung ke area di bawah</p>
+        </div>
+        
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="file-input" accept="image/*" class="file-input">
+          <div class="upload-prompt" id="upload-prompt">
+            <div class="upload-icon-wrapper">
+              <svg viewBox="0 0 24 24" class="upload-icon">
+                <path d="M19.35,10.04C18.67,6.59,15.64,4,12,4C9.11,4,6.6,5.64,5.35,8.04C2.34,8.36,0,10.91,0,14C0,17.31,2.69,20,6,20H19C21.76,20,24,17.76,24,15C24,12.36,21.95,10.22,19.35,10.04M19,18H6C3.79,18,2,16.21,2,14C2,12.08,3.36,10.5,5.2,10.17L6.18,10L6.47,9.03C7.38,6.04,10.16,4,13.25,4C16.57,4,19.33,6.23,20.03,9.45L20.35,10.9L21.87,11C23.08,11.08,24,12.09,24,13.3C24,14.65,22.9,15.75,21.55,15.75H19V18M12,8.5L7.5,13H10.5V16H13.5V13H16.5L12,8.5Z"/>
+              </svg>
+            </div>
+            <span class="upload-text">Pilih atau Seret Gambar di Sini</span>
+            <span class="upload-subtext">Mendukung PNG, JPG, JPEG, WebP</span>
+          </div>
+          
+          <div class="preview-container hidden" id="preview-container">
+            <img src="" alt="Preview" class="image-preview" id="image-preview">
+            <div class="laser-scanner" id="laser-scanner"></div>
+          </div>
+        </div>
+
+        <div class="options-group">
+          <label for="ocr-language" class="field-label">Bahasa Deteksi Teks (OCR)</label>
+          <div class="custom-select-wrapper">
+            <select id="ocr-language">
+              <option value="ind+eng">Indonesia + Inggris (Rekomendasi)</option>
+              <option value="ind">Bahasa Indonesia</option>
+              <option value="eng">English</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="options-group">
+          <label for="ocr-layout-mode" class="field-label">Mode Layout Gambar (Akurasi)</label>
+          <div class="custom-select-wrapper">
+            <select id="ocr-layout-mode">
+              <option value="3">Otomatis (Default)</option>
+              <option value="4">Tabel / Kolom Berurutan (Terstruktur)</option>
+              <option value="11">Teks Menyebar / Acak (Sparse Text)</option>
+              <option value="6">Satu Paragraf Seragam</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="btn-process" class="btn btn-primary" disabled>
+          <span>Mulai Proses Scan</span>
+          <svg viewBox="0 0 24 24" class="btn-icon">
+            <path d="M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,2A10,10 0 1,0 22,12A10,10 0 0,0 12,2M12,6A6,6 0 1,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 1,0 16,12A4,4 0 0,0 12,8Z"/>
+          </svg>
+        </button>
+      </section>
+
+      <!-- Right Column: Results & Progress -->
+      <div class="right-column-grid">
+        <!-- Progress Card (visible only when processing) -->
+        <section class="card progress-card hidden" id="progress-card">
+          <div class="card-header">
+            <h2>Memproses Gambar...</h2>
+            <p class="card-subtitle" id="progress-status">Menginisialisasi modul OCR</p>
+          </div>
+          
+          <div class="progress-bar-wrapper">
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="progress-bar-fill"></div>
+            </div>
+            <div class="progress-stats">
+              <span class="progress-percentage" id="progress-percentage">0%</span>
+              <span class="loading-spinner"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Result Card -->
+        <section class="card result-card hidden" id="result-card">
+          <div class="card-header border-bottom">
+            <div class="status-indicator success" id="result-status-indicator">
+              <svg viewBox="0 0 24 24" class="status-icon">
+                <path d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"/>
+              </svg>
+              <h2 id="result-status-title">Teks Berhasil Diekstrak!</h2>
+            </div>
+          </div>
+          
+          <div class="result-details">
+            <div class="detail-row">
+              <span class="detail-label">Hasil Ekstraksi Teks</span>
+              <div class="extracted-text-box">
+                <textarea id="res-extracted-text" readonly></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-actions">
+            <button id="btn-copy-text" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" class="btn-icon">
+                <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+              </svg>
+              <span>Salin Teks</span>
+            </button>
+            <button id="btn-reset" class="btn btn-outline">Scan Gambar Lain</button>
+          </div>
+        </section>
+
+        <!-- Session History Card -->
+        <section class="card history-card">
+          <div class="card-header">
+            <h2>Riwayat Sesi Ini</h2>
+            <p class="card-subtitle">Daftar teks yang diekstrak selama halaman aktif</p>
+          </div>
+          
+          <div class="history-list-wrapper">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th style="width: 15%">Waktu</th>
+                  <th style="width: 70%">Hasil Teks</th>
+                  <th style="width: 15%">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr>
+                  <td colspan="3" class="table-empty">Belum ada teks yang diekstrak pada sesi ini.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <p>ScanTextGambar &copy; 2026. Berjalan secara offline & lokal dengan aman.</p>
+    </footer>
+  </div>
+
+  <!-- Javascript File -->
+  <script src="app.js"></script>
+</body>
+</html>
